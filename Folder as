@@ -1,5 +1,0 @@
-youtube-downloader/
-├── site/          ← Pages အတွက်
-│   └── index.html
-└── worker/        ← နောက်မှ လုပ်မယ်
-    └── ...
