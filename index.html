@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader - အခမဲ့</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p { color: #888; font-size: 1.1rem; }
+
+        /* Card */
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        /* Input */
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 4px rgba(0,212,255,0.15);
+        }
+
+        input::placeholder { color: #666; }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,212,255,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active { display: block; }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error */
+        .error {
+            background: rgba(239,68,68,0.15);
+            border-left: 4px solid #ef4444;
+            padding: 16px;
+            border-radius: 10px;
+            color: #fca5a5;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.active { display: block; }
+
+        /* Results */
+        .results { display: none; }
+        .results.active { display: block; }
+
+        /* Video Info */
+        .video-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .thumbnail {
+            width: 100%;
+            max-width: 360px;
+            height: 202px;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .meta { flex: 1; min-width: 250px; }
+
+        .meta h2 {
+            color: #fff;
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .meta p {
+            color: #a0a0c0;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(0,0,0,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #b0b0d0;
+        }
+
+        /* Download Grid */
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .download-card {
+            background: rgba(0,0,0,0.25);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s;
+        }
+
+        .download-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0,212,255,0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .quality {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .format-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .tag-video { background: rgba(0,212,255,0.15); color: #00d4ff; }
+        .tag-audio { background: rgba(123,44,191,0.15); color: #c084fc; }
+
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(16,185,129,0.4);
+        }
+
+        .download-btn.audio {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        }
+
+        .download-btn.audio:hover {
+            box-shadow: 0 8px 25px rgba(139,92,246,0.4);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8rem; }
+            .thumbnail { width: 100%; height: auto; }
+            .video-info { flex-direction: column; }
+            .download-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎬 YouTube Downloader</h1>
+            <p>Video, Shorts, Music - အခမဲ့ Download လုပ်ပါ</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="card">
+            <input type="text" id="videoUrl" 
+                placeholder="YouTube URL ထည့်ပါ..." 
+                value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+            
+            <button class="btn" id="downloadBtn" onclick="fetchVideo()">
+                ⬇️ Download Links ယူမယ်
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Video information ယူနေပါသည်...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results" id="results">
+            <div class="card">
+                <div class="video-info" id="videoInfo"></div>
+                <div class="download-grid" id="downloadGrid"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>⚡ Powered by Cloudflare | အခမဲ့ သုံးပါ</p>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ နောက်မှ Worker URL နဲ့ ပြောင်းပါ
+        const WORKER_URL = 'https://yt-downloader-proxy.YOUR_NAME.workers.dev';
+
+        async function fetchVideo() {
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+            const btn = document.getElementById('downloadBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const results = document.getElementById('results');
+
+            // URL စစ်
+            if (!videoUrl) {
+                error.textContent = '❌ YouTube URL ထည့်ပါ';
+                error.classList.add('active');
+                return;
+            }
+
+            // Worker URL စစ် (default မဟုတ်ရင်)
+            if (WORKER_URL.includes('YOUR_NAME')) {
+                error.innerHTML = '⚠️ Worker URL ကို ပြောင်းပါ<br>site/index.html မှာ WORKER_URL ကို သင့် Worker URL နဲ့ ပြင်ပါ';
+                error.classList.add('active');
+                return;
+            }
+
+            btn.disabled = true;
+            loading.classList.add('active');
+            error.classList.remove('active');
+            results.classList.remove('active');
+
+            try {
+                // Worker ကို ခေါ်
+                const response = await fetch(
+                    `${WORKER_URL}?url=${encodeURIComponent(videoUrl)}`
+                );
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                const info = data.data;
+
+                // Video Info ပြပ်
+                document.getElementById('videoInfo').innerHTML = `
+                    <img src="${info.thumbnail || `https://img.youtube.com/vi/${data.videoId}/maxresdefault.jpg`}" 
+                        alt="${info.title}" class="thumbnail"
+                        onerror="this.src='https://img.youtube.com/vi/${data.videoId}/hqdefault.jpg'">
+                    <div class="meta">
+                        <h2>${info.title || 'မသိ'}</h2>
+                        <p>👤 ${info.channel || info.channelTitle || 'မသိ'}</p>
+                        <p>⏱️ ${formatDuration(info.duration)}</p>
+                        <div class="stats">
+                            <span class="stat">👁️ ${formatNumber(info.viewCount || 0)}</span>
+                            <span class="stat">👍 ${formatNumber(info.likeCount || 0)}</span>
+                            <span class="stat">💬 ${formatNumber(info.commentCount || 0)}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Download Links ပြပ်
+                const formats = info.formats || [];
+                if (formats.length === 0) {
+                    document.getElementById('downloadGrid').innerHTML = 
+                        '<p style="color: #888; text-align: center; grid-column: 1/-1;">Download links မရပါ</p>';
+                } else {
+                    document.getElementById('downloadGrid').innerHTML = formats.map(f => {
+                        const isAudio = (f.mimeType || '').includes('audio');
+                        return `
+                            <div class="download-card">
+                                <div class="quality">${f.qualityLabel || f.quality || 'မသိ'}</div>
+                                <span class="format-tag ${isAudio ? 'tag-audio' : 'tag-video'}">
+                                    ${isAudio ? 'Audio' : 'Video'} • ${f.ext || 'mp4'}
+                                </span>
+                                <button class="download-btn ${isAudio ? 'audio' : ''}" 
+                                    onclick="window.open('${f.url}', '_blank')">
+                                    ⬇️ Download
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                results.classList.add('active');
+
+            } catch (err) {
+                error.textContent = '❌ ' + err.message;
+                error.classList.add('active');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return 'N/A';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatNumber(num) {
+            if (!num) return '0';
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // Enter key support
+        document.getElementById('videoUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') fetchVideo();
+        });
+    </script>
+</body>
+</html>
